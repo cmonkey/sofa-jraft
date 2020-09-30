@@ -34,16 +34,14 @@ public class CounterClientBootstrap {
 
         final CountDownLatch latch = new CountDownLatch(n);
 
-        final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-
         for(int i = 0; i < n; i++){
-            incrementAndGet(cliClientService, leader, i, latch, executor);
+            incrementAndGet(cliClientService, leader, i, latch);
         }
         latch.await();
 
     }
 
-    private static void incrementAndGet(CliClientServiceImpl cliClientService, PeerId leader, int delta, CountDownLatch latch, Executor executor) throws RemotingException, InterruptedException {
+    private static void incrementAndGet(CliClientServiceImpl cliClientService, PeerId leader, int delta, CountDownLatch latch) throws RemotingException, InterruptedException {
 
         final IncrementAndGetRequest request = new IncrementAndGetRequest();
         request.setDelta(delta);
@@ -62,7 +60,7 @@ public class CounterClientBootstrap {
 
             @Override
             public Executor executor(){
-                return executor;
+                return null;
             }
         }, 5000);
     }

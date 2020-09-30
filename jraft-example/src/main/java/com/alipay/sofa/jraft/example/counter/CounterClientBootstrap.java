@@ -9,9 +9,7 @@ import com.alipay.sofa.jraft.option.CliOptions;
 import com.alipay.sofa.jraft.rpc.InvokeCallback;
 import com.alipay.sofa.jraft.rpc.impl.cli.CliClientServiceImpl;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 public class CounterClientBootstrap {
     public static void main(String[] args) throws TimeoutException, InterruptedException, RemotingException {
@@ -36,14 +34,16 @@ public class CounterClientBootstrap {
 
         final CountDownLatch latch = new CountDownLatch(n);
 
+        final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
         for(int i = 0; i < n; i++){
-            incrementAndGet(cliClientService, leader, i, latch);
+            incrementAndGet(cliClientService, leader, i, latch, executor);
         }
         latch.await();
 
     }
 
-    private static void incrementAndGet(CliClientServiceImpl cliClientService, PeerId leader, int delta, CountDownLatch latch) throws RemotingException, InterruptedException {
+    private static void incrementAndGet(CliClientServiceImpl cliClientService, PeerId leader, int delta, CountDownLatch latch, Executor executor) throws RemotingException, InterruptedException {
 
         final IncrementAndGetRequest request = new IncrementAndGetRequest();
         request.setDelta(delta);
@@ -52,6 +52,7 @@ public class CounterClientBootstrap {
             @Override
             public void complete(Object result, Throwable err ){
                 if(null == err){
+                    System.out.println("result = " + result);
                     latch.countDown();
                 }else{
                     err.printStackTrace();
@@ -61,7 +62,7 @@ public class CounterClientBootstrap {
 
             @Override
             public Executor executor(){
-                return null;
+                return executor;
             }
         }, 5000);
     }
